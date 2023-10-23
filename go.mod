@@ -1,4 +1,4 @@
-module repo.collega.co.id/olibs724/smart-branch-lib.git
+module github.com/collega-repo/smart-branch-lib
 
 go 1.21
 

@@ -3,10 +3,10 @@ package validation
 import (
 	"errors"
 	"fmt"
+	"github.com/collega-repo/smart-branch-lib/commons/errs"
 	"github.com/go-playground/validator/v10"
 	"github.com/shopspring/decimal"
 	"reflect"
-	"repo.collega.co.id/olibs724/smart-branch-service/commons/errs"
 	"strconv"
 	"strings"
 )

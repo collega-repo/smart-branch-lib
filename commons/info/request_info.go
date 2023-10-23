@@ -9,19 +9,12 @@ import (
 type RequestInfo struct {
 	UserAgent      string
 	UserId         string
-	BranchId       string
-	DeviceId       string
-	Role           string
 	IpAddr         string
 	Method         string
 	Path           string
 	ReqTime        time.Time
 	IdempotencyKey string
-	ApplicationId  string
-	OauthClient    dto.Oauth2Client
-	OauthToken     dto.Oauth2Token
 	CfgSys         dto.CfgSys
-	ListApplId     []string
 }
 
 type requestInfo struct{}
@@ -53,37 +46,7 @@ func GetRequestIdempotencyKey(ctx context.Context) string {
 	return info.IdempotencyKey
 }
 
-func GetRequestBranchId(ctx context.Context) string {
-	info, _ := ctx.Value(requestInfo{}).(RequestInfo)
-	return info.BranchId
-}
-
-func GetRequestApplId(ctx context.Context) string {
-	info, _ := ctx.Value(requestInfo{}).(RequestInfo)
-	return info.ApplicationId
-}
-
-func GetRequestOauthClient(ctx context.Context) dto.Oauth2Client {
-	info, _ := ctx.Value(requestInfo{}).(RequestInfo)
-	return info.OauthClient
-}
-
-func GetRequestOauthToken(ctx context.Context) dto.Oauth2Token {
-	info, _ := ctx.Value(requestInfo{}).(RequestInfo)
-	return info.OauthToken
-}
-
 func GetRequestCfgSys(ctx context.Context) dto.CfgSys {
 	info, _ := ctx.Value(requestInfo{}).(RequestInfo)
 	return info.CfgSys
-}
-
-func GetRequestCfgAppl(ctx context.Context) []string {
-	info, _ := ctx.Value(requestInfo{}).(RequestInfo)
-	return info.ListApplId
-}
-
-func GetRequestDeviceId(ctx context.Context) string {
-	info, _ := ctx.Value(requestInfo{}).(RequestInfo)
-	return info.DeviceId
 }

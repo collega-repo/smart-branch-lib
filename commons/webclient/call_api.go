@@ -84,7 +84,7 @@ func (l logEven) SendResponse(logger zerolog.Logger) {
 
 var passwordRegex = regexp.MustCompile(`"password":\s*"([^"]+)"`)
 
-func CallRestApi[T, P any](ctx context.Context, path string, method string, payLoad P) (status int, result T, err error) {
+func CallRestApi[T, P any](ctx context.Context, path string, method string, payLoad P, listReqInfo ...info.RequestInfo) (status int, result T, err error) {
 	status = 500
 	var byteJson []byte
 	if any(payLoad) != nil {
@@ -94,7 +94,12 @@ func CallRestApi[T, P any](ctx context.Context, path string, method string, payL
 		}
 	}
 
-	reqInfo := info.GetRequestInfo(ctx)
+	var reqInfo info.RequestInfo
+	if len(listReqInfo) == 0 {
+		reqInfo = info.GetRequestInfo(ctx)
+	} else {
+		reqInfo = listReqInfo[0]
+	}
 
 	var buffer *bytes.Buffer
 	switch method {
@@ -180,6 +185,6 @@ func CallRestApi[T, P any](ctx context.Context, path string, method string, payL
 	return status, result, err
 }
 
-func CallPostServiceApi[T, P any](ctx context.Context, path string, payload P) (status int, result T, err error) {
-	return CallRestApi[T](ctx, path, http.MethodPost, payload)
+func CallPostServiceApi[T, P any](ctx context.Context, path string, payload P, reqInfo ...info.RequestInfo) (status int, result T, err error) {
+	return CallRestApi[T](ctx, path, http.MethodPost, payload, reqInfo...)
 }

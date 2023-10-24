@@ -91,11 +91,7 @@ type ApiResponse[T any] struct {
 	Status  status `json:"status"`
 	Message string `json:"message"`
 	Data    T      `json:"data,omitempty"`
-	Errors  error  `json:"error,omitempty"`
-}
-
-func (a ApiResponse[T]) Error() string {
-	return a.Message
+	Error   error  `json:"error,omitempty"`
 }
 
 func (a *ApiResponse[T]) GetRawJSON() ([]byte, error) {
@@ -128,7 +124,7 @@ func FailedApiResponse[T any](message string, err error) ApiResponse[T] {
 		Code:    CodeFailed,
 		Status:  FailedResponse,
 		Message: message,
-		Errors:  err,
+		Error:   err,
 	}
 }
 
@@ -138,7 +134,7 @@ func FailedApiResponseWithData[T any](message string, data T, err error) ApiResp
 		Status:  FailedResponse,
 		Message: message,
 		Data:    data,
-		Errors:  err,
+		Error:   err,
 	}
 }
 
@@ -147,7 +143,7 @@ func NotFoundApiResponse[T any](message string, err error) ApiResponse[T] {
 		Code:    CodeNotFound,
 		Status:  FailedResponse,
 		Message: message,
-		Errors:  err,
+		Error:   err,
 	}
 }
 
@@ -156,7 +152,7 @@ func BadRequestApiResponse[T any](message string) ApiResponse[T] {
 		Code:    CodeFailed,
 		Status:  FailedResponse,
 		Message: message,
-		Errors:  nil,
+		Error:   nil,
 	}
 }
 
@@ -165,7 +161,7 @@ func BadRequestApiResponseWithError[T any](message string, err error) ApiRespons
 		Code:    CodeFailed,
 		Status:  FailedResponse,
 		Message: message,
-		Errors:  err,
+		Error:   err,
 	}
 }
 
@@ -174,7 +170,7 @@ func InvalidRequestApiResponse[T any](errMap errs.ErrMap) ApiResponse[T] {
 		Code:    CodeInvalidRequest,
 		Status:  FailedResponse,
 		Message: "invalid request",
-		Errors:  errMap,
+		Error:   errMap,
 	}
 }
 
@@ -233,7 +229,7 @@ func FailedFromAnotherResponse[T any, E any](response ApiResponse[E]) ApiRespons
 		Code:    response.Code,
 		Status:  response.Status,
 		Message: response.Message,
-		Errors:  response.Errors,
+		Error:   response.Error,
 	}
 }
 

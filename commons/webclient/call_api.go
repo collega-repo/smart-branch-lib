@@ -4,12 +4,10 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"fmt"
 	"github.com/collega-repo/smart-branch-lib/commons"
 	"github.com/collega-repo/smart-branch-lib/commons/errs"
 	"github.com/collega-repo/smart-branch-lib/commons/info"
 	"github.com/collega-repo/smart-branch-lib/configs"
-	"github.com/collega-repo/smart-branch-lib/dto"
 	"github.com/goccy/go-json"
 	"github.com/rs/zerolog"
 	"io"
@@ -184,49 +182,4 @@ func CallRestApi[T, P any](ctx context.Context, path string, method string, payL
 
 func CallPostServiceApi[T, P any](ctx context.Context, path string, payload P) (status int, result T, err error) {
 	return CallRestApi[T](ctx, path, http.MethodPost, payload)
-}
-
-// CallGatewayApiCBS
-// khusus jika core banking adalah olibs724 (collega)
-func CallGatewayApiCBS[T, P any](ctx context.Context, pathApi string, req P) (dto.GatewayRes[T], error) {
-	statusCode, gatewayRes, err := CallPostServiceApi[dto.GatewayRes[T]](ctx, pathApi, req)
-	if err != nil {
-		if errors.Is(err, errs.ErrApiNotFound) || errors.Is(err, errs.ErrpApiRequest) {
-			return gatewayRes, commons.ErrorCallAPi{
-				StatusCode: statusCode,
-				ErrorCode:  gatewayRes.RCode,
-				Errors:     fmt.Errorf(`Gagal terhubung dengan Core Banking`),
-			}
-		}
-		return gatewayRes, commons.ErrorCallAPi{
-			StatusCode: statusCode,
-			ErrorCode:  gatewayRes.RCode,
-			Errors:     err,
-		}
-	}
-
-	if gatewayRes.StatusId == 0 && (statusCode >= 400 && statusCode < 500) {
-		return gatewayRes, commons.ErrorCallAPi{
-			StatusCode: statusCode,
-			ErrorCode:  gatewayRes.RCode,
-			Errors:     fmt.Errorf(gatewayRes.Message),
-		}
-	}
-
-	if gatewayRes.StatusId == 0 && (statusCode >= 200 && statusCode < 400) {
-		return gatewayRes, commons.ErrorCallAPi{
-			StatusCode: http.StatusBadRequest,
-			ErrorCode:  gatewayRes.RCode,
-			Errors:     fmt.Errorf(gatewayRes.Message),
-		}
-	}
-
-	if gatewayRes.StatusId == 0 {
-		return gatewayRes, commons.ErrorCallAPi{
-			StatusCode: statusCode,
-			ErrorCode:  gatewayRes.RCode,
-			Errors:     fmt.Errorf(gatewayRes.Message),
-		}
-	}
-	return gatewayRes, nil
 }

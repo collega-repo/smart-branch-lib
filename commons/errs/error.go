@@ -21,7 +21,7 @@ var (
 	ErrBranchNotFound   = errors.New("branch is not found")
 )
 
-type ErrMap map[string]any
+type ErrMap map[string]string
 
 func (e ErrMap) Error() string {
 	jsonByte, _ := json.Marshal(e)

@@ -6,6 +6,8 @@ import (
 	"github.com/collega-repo/smart-branch-lib/commons/errs"
 	"github.com/goccy/go-json"
 	"github.com/gofiber/fiber/v2"
+	"google.golang.org/grpc/codes"
+	status2 "google.golang.org/grpc/status"
 	"net/http"
 )
 
@@ -63,10 +65,13 @@ var MapStatusCode = map[code]int{
 	CodeFailed:                 http.StatusBadRequest,
 }
 
-var MapCode = map[code]map[int]string{
-	CodeSuccess: {
-		http.StatusOK: "",
-	},
+var MapStatusGrpc = map[code]codes.Code{
+	CodeSuccess:              codes.OK,
+	CodeNotFound:             codes.NotFound,
+	CodeNotFoundCore:         codes.NotFound,
+	CodeUnAuthentication:     codes.NotFound,
+	CodeUnAuthenticationCore: codes.NotFound,
+	CodeFailed:               codes.InvalidArgument,
 }
 
 type ErrorResponse struct {
@@ -268,4 +273,23 @@ func Response[T any](c *fiber.Ctx, response ApiResponse[T]) (err error) {
 	c.Response().Header.SetContentType(fiber.MIMEApplicationJSON)
 	c.Response().SetBodyRaw(raw)
 	return
+}
+
+func ResponseErrorGrpc[T any](response ApiResponse[T]) error {
+	errResponse := ErrResponse{
+		Code:    string(response.Code),
+		Message: response.Message,
+	}
+
+	if response.Error != nil {
+		var errMap errs.ErrMap
+		if errors.As(response.Error, &errMap) {
+			errResponse.Detail = errMap
+		}
+	}
+	statusRes, err := status2.New(MapStatusGrpc[response.Code], response.Message).WithDetails(&errResponse)
+	if err != nil {
+		return err
+	}
+	return statusRes.Err()
 }

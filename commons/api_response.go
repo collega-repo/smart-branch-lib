@@ -65,12 +65,13 @@ var MapStatusCode = map[code]int{
 	CodeFailed:                 http.StatusBadRequest,
 }
 
-var MapStatusGrpc = map[code]codes.Code{
+var MapStatusRestToGrpc = map[code]codes.Code{
 	CodeSuccess:              codes.OK,
 	CodeNotFound:             codes.NotFound,
 	CodeNotFoundCore:         codes.NotFound,
 	CodeUnAuthentication:     codes.NotFound,
 	CodeUnAuthenticationCore: codes.NotFound,
+	CodeInternalError:        codes.Internal,
 	CodeFailed:               codes.InvalidArgument,
 }
 
@@ -206,6 +207,8 @@ func FailedResponseCallAPI[T any](err error) (ApiResponse[T], bool) {
 				Status:  FailedResponse,
 				Message: fmt.Sprintf(`invalid call api: %s`, err.Error()),
 			}, true
+		case errRes.StatusCode == http.StatusNotFound:
+			return NotFoundApiResponse[T](err.Error(), nil), true
 		default:
 			return FailedApiResponse[T](err.Error(), nil), true
 		}
@@ -275,21 +278,51 @@ func Response[T any](c *fiber.Ctx, response ApiResponse[T]) (err error) {
 	return
 }
 
+func ErrResponseFromGrpc(err error) *ErrResponse {
+	statusResponse := status2.Convert(err)
+	if len(statusResponse.Details()) > 0 {
+		if errorResponse, ok := statusResponse.Details()[0].(*ErrResponse); ok {
+			return errorResponse
+		}
+	}
+	return nil
+}
+
+func ErrorFromGrpc(err error) error {
+	errorResponse := ErrResponseFromGrpc(err)
+	if errorResponse != nil {
+		switch errorResponse.Code {
+		case string(CodeUnAuthenticationCore), string(CodeUnAuthentication):
+			return errs.ErrAuthFailed
+		case string(CodeNotFoundCore), string(CodeNotFound):
+			return errs.ErrRecordNotFound
+		default:
+			return fmt.Errorf(errorResponse.Message)
+		}
+	}
+	return err
+}
+
 func ResponseErrorGrpc[T any](response ApiResponse[T]) error {
 	errResponse := ErrResponse{
 		Code:    string(response.Code),
 		Message: response.Message,
 	}
 
+	var err error
+	statusRes := status2.New(MapStatusRestToGrpc[response.Code], response.Message)
 	if response.Error != nil {
 		var errMap errs.ErrMap
 		if errors.As(response.Error, &errMap) {
 			errResponse.Detail = errMap
 		}
-	}
-	statusRes, err := status2.New(MapStatusGrpc[response.Code], response.Message).WithDetails(&errResponse)
-	if err != nil {
-		return err
+
+		if errResponse.Detail != nil {
+			statusRes, err = statusRes.WithDetails(&errResponse)
+			if err != nil {
+				return err
+			}
+		}
 	}
 	return statusRes.Err()
 }

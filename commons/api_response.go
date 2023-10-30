@@ -32,6 +32,7 @@ const (
 	CodeSuccessNoData          code      = "04"
 	CodeNotFoundCore           code      = "84"
 	CodeUnAuthenticationCore   code      = "87"
+	CodeTrxNotFound            code      = "92"
 	CodeInternalError          code      = "93"
 	CodeNotFound               code      = "94"
 	CodeIdempotencyFailed      code      = "95"
@@ -150,6 +151,14 @@ func NotFoundApiResponse[T any](message string, err error) ApiResponse[T] {
 		Status:  FailedResponse,
 		Message: message,
 		Error:   err,
+	}
+}
+
+func TrxNotFoundApiResponse[T any](message string) ApiResponse[T] {
+	return ApiResponse[T]{
+		Code:    CodeTrxNotFound,
+		Status:  FailedResponse,
+		Message: message,
 	}
 }
 

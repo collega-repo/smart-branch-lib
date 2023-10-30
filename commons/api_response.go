@@ -316,13 +316,10 @@ func ResponseErrorGrpc[T any](response ApiResponse[T]) error {
 		if errors.As(response.Error, &errMap) {
 			errResponse.Detail = errMap
 		}
-
-		if errResponse.Detail != nil {
-			statusRes, err = statusRes.WithDetails(&errResponse)
-			if err != nil {
-				return err
-			}
-		}
+	}
+	statusRes, err = statusRes.WithDetails(&errResponse)
+	if err != nil {
+		return err
 	}
 	return statusRes.Err()
 }

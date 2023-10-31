@@ -14,6 +14,7 @@ type RequestInfo struct {
 	Path           string
 	ReqTime        time.Time
 	IdempotencyKey string
+	RequestId      string
 	CfgSys         dto.CfgSys
 }
 

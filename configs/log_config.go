@@ -46,3 +46,96 @@ func NewLoggerReqRes(name string, date time.Time, multiOutput bool, path ...stri
 	}
 	return zerolog.New(logFile).With().Timestamp().Logger()
 }
+
+type LogEvent struct {
+	IdempotencyKey string
+	RequestId      string
+	BodyRequest    []byte
+	BodyResponse   []byte
+	Error          error
+	Message        string
+	StartTime      time.Time
+	Host           string
+	Path           string
+	Method         string
+	Protocol       string
+}
+
+func (l LogEvent) SendRequest(logger zerolog.Logger) {
+	var eventLog *zerolog.Event
+	if l.Error != nil {
+		eventLog = logger.Err(l.Error)
+	} else {
+		eventLog = logger.Debug()
+	}
+	if string(l.BodyRequest) != "" {
+		eventLog.RawJSON("reqBody", l.BodyRequest)
+	}
+	if l.IdempotencyKey != "" {
+		eventLog.Str(`idempotencyKey`, l.IdempotencyKey)
+	}
+	if l.RequestId != "" {
+		eventLog.Str(`requestId`, l.RequestId)
+	}
+	if l.Host != "" {
+		eventLog.Str(`host`, l.Host)
+	}
+	if l.Path != "" {
+		eventLog.Str(`path`, l.Path)
+	}
+
+	eventLog.
+		Str(`startTime`, l.StartTime.Format("2006-01-02 15:04:05.000")).
+		Str(`method`, l.Method).
+		Str(`protocol`, l.Protocol)
+
+	go func() {
+		if l.Message != "" {
+			eventLog.Msg(l.Message)
+		} else {
+			eventLog.Send()
+		}
+	}()
+}
+
+func (l LogEvent) SendResponse(logger zerolog.Logger) {
+	var eventLog *zerolog.Event
+	if l.Error != nil {
+		eventLog = logger.Err(l.Error)
+	} else {
+		eventLog = logger.Info()
+	}
+	if string(l.BodyResponse) != "" {
+		eventLog.RawJSON(`resBody`, l.BodyResponse)
+	}
+	if string(l.BodyRequest) != "" {
+		eventLog.RawJSON("reqBody", l.BodyRequest)
+	}
+	if l.IdempotencyKey != "" {
+		eventLog.Str(`idempotencyKey`, l.IdempotencyKey)
+	}
+	if l.RequestId != "" {
+		eventLog.Str(`requestId`, l.RequestId)
+	}
+	if l.Host != "" {
+		eventLog.Str(`host`, l.Host)
+	}
+	if l.Path != "" {
+		eventLog.Str(`path`, l.Path)
+	}
+
+	eventLog.
+		Dur(`duration`, time.Since(l.StartTime)).
+		Str(`startTime`, l.StartTime.Format("2006-01-02 15:04:05.000")).
+		Str(`endTime`, time.Now().Format("2006-01-02 15:04:05.000")).
+		Str(`method`, l.Method).
+		Str(`protocol`, l.Protocol)
+
+	go func() {
+		if l.Message != "" {
+			eventLog.Msg(l.Message)
+		} else {
+			eventLog.Send()
+		}
+	}()
+}

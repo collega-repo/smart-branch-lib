@@ -9,78 +9,12 @@ import (
 	"github.com/collega-repo/smart-branch-lib/commons/info"
 	"github.com/collega-repo/smart-branch-lib/configs"
 	"github.com/goccy/go-json"
-	"github.com/rs/zerolog"
 	"io"
 	"net/http"
 	"regexp"
 	"syscall"
 	"time"
 )
-
-type logEven struct {
-	idempotencyKey string
-	bodyRequest    []byte
-	bodyResponse   []byte
-	err            error
-	msg            string
-	startTime      time.Time
-	method         string
-	url            string
-}
-
-func (l logEven) SendRequest(logger zerolog.Logger) {
-	var eventLog *zerolog.Event
-	if l.err != nil {
-		eventLog = logger.Err(l.err)
-	} else {
-		eventLog = logger.Debug()
-	}
-	if string(l.bodyRequest) != "" {
-		eventLog.RawJSON("reqBody", l.bodyRequest)
-	}
-	eventLog.
-		Str(`idempotencyKey`, l.idempotencyKey).
-		Str(`startTime`, l.startTime.Format("2006-01-02 15:04:05.000")).
-		Str(`method`, l.method).
-		Str(`url`, l.url)
-
-	go func() {
-		if l.msg != "" {
-			eventLog.Msg(l.msg)
-		} else {
-			eventLog.Send()
-		}
-	}()
-}
-
-func (l logEven) SendResponse(logger zerolog.Logger) {
-	var eventLog *zerolog.Event
-	if l.err != nil {
-		eventLog = logger.Err(l.err)
-	} else {
-		eventLog = logger.Info()
-	}
-	if string(l.bodyResponse) != "" {
-		eventLog.RawJSON(`resBody`, l.bodyResponse)
-	}
-	if string(l.bodyRequest) != "" {
-		eventLog.RawJSON("reqBody", l.bodyRequest)
-	}
-	eventLog.Str(`idempotencyKey`, l.idempotencyKey).
-		Dur(`duration`, time.Since(l.startTime)).
-		Str(`startTime`, l.startTime.Format("2006-01-02 15:04:05.000")).
-		Str(`endTime`, time.Now().Format("2006-01-02 15:04:05.000")).
-		Str(`method`, l.method).
-		Str(`url`, l.url)
-
-	go func() {
-		if l.msg != "" {
-			eventLog.Msg(l.msg)
-		} else {
-			eventLog.Send()
-		}
-	}()
-}
 
 var passwordRegex = regexp.MustCompile(`"password":\s*"([^"]+)"`)
 
@@ -119,26 +53,31 @@ func CallRestApi[T, P any](ctx context.Context, path string, method string, payL
 		req.Header.Set(`X-Forwarded-For`, reqInfo.IpAddr)
 	}
 
-	logEven := logEven{}
+	logEven := configs.LogEvent{}
 	if reqInfo.IdempotencyKey != "" {
 		req.Header.Set(commons.Configs.App.Cache.Key, reqInfo.IdempotencyKey)
-		logEven.idempotencyKey = reqInfo.IdempotencyKey
+		logEven.IdempotencyKey = reqInfo.IdempotencyKey
+	}
+
+	if reqInfo.RequestId != "" {
+		req.Header.Set(`X-Request-ID`, reqInfo.RequestId)
+		logEven.RequestId = reqInfo.RequestId
 	}
 
 	now := time.Now()
 	logReq := configs.NewLoggerReqRes(`external_api_request`, now, false)
 	logRes := configs.NewLoggerReqRes(`external_api_response`, now, true)
 
-	logEven.method = method
-	logEven.url = path
-	logEven.bodyRequest = byteJson
+	logEven.Path = path
+	logEven.Method = method
+	logEven.BodyRequest = byteJson
 	logEven.SendRequest(logReq)
 
 	client := http.Client{}
 	res, err := client.Do(req)
 	if err != nil {
 		if commons.Configs.Core.LogDebug {
-			logEven.err = err
+			logEven.Error = err
 			logEven.SendResponse(logRes)
 		}
 		var aa syscall.Errno
@@ -150,7 +89,7 @@ func CallRestApi[T, P any](ctx context.Context, path string, method string, payL
 
 	if res.Header.Get(`Content-Type`) == "text/html;charset=utf-8" {
 		if commons.Configs.Core.LogDebug {
-			logEven.err = err
+			logEven.Error = err
 			logEven.SendResponse(logRes)
 		}
 		return res.StatusCode, result, errs.ErrApiNotFound
@@ -159,7 +98,7 @@ func CallRestApi[T, P any](ctx context.Context, path string, method string, payL
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
 		if commons.Configs.Core.LogDebug {
-			logEven.err = err
+			logEven.Error = err
 			logEven.SendResponse(logRes)
 		}
 		return status, result, err
@@ -170,7 +109,7 @@ func CallRestApi[T, P any](ctx context.Context, path string, method string, payL
 
 	if body != nil {
 		if commons.Configs.Core.LogDebug {
-			logEven.bodyResponse = body
+			logEven.BodyResponse = body
 			logEven.SendResponse(logRes)
 		}
 

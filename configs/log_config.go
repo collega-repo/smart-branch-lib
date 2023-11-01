@@ -50,6 +50,7 @@ func NewLoggerReqRes(name string, date time.Time, multiOutput bool, path ...stri
 type LogEvent struct {
 	IdempotencyKey string
 	RequestId      string
+	UserId         string
 	BodyRequest    []byte
 	BodyResponse   []byte
 	Error          error

@@ -2,6 +2,7 @@ package commons
 
 import (
 	"github.com/goccy/go-json"
+	"regexp"
 	"time"
 )
 
@@ -105,3 +106,7 @@ func ConvertStruct(src any, dest any) error {
 
 	return json.Unmarshal(jsonByte, dest)
 }
+
+var PasswordRegex = regexp.MustCompile(`"password":\s*"([^"]+)"`)
+var UsernameRegex = regexp.MustCompile(`"username"\s*:\s*"([^"]+)"`)
+var UserIdRegex = regexp.MustCompile(`"userId"\s*:\s*"([^"]+)"`)

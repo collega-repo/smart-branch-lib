@@ -55,6 +55,7 @@ type LogEvent struct {
 	Error          error
 	Message        string
 	StartTime      time.Time
+	Ip             string
 	Host           string
 	Path           string
 	Method         string
@@ -76,6 +77,9 @@ func (l LogEvent) SendRequest(logger zerolog.Logger) {
 	}
 	if l.RequestId != "" {
 		eventLog.Str(`requestId`, l.RequestId)
+	}
+	if l.Ip != "" {
+		eventLog.Str(`ip`, l.Ip)
 	}
 	if l.Host != "" {
 		eventLog.Str(`host`, l.Host)

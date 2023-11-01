@@ -51,6 +51,7 @@ type LogEvent struct {
 	IdempotencyKey string
 	RequestId      string
 	UserId         string
+	UserAgent      string
 	BodyRequest    []byte
 	BodyResponse   []byte
 	Error          error
@@ -78,6 +79,12 @@ func (l LogEvent) SendRequest(logger zerolog.Logger) {
 	}
 	if l.RequestId != "" {
 		eventLog.Str(`requestId`, l.RequestId)
+	}
+	if l.UserId != "" {
+		eventLog.Str(`userId`, l.UserId)
+	}
+	if l.UserAgent != "" {
+		eventLog.Str(`userAgent`, l.UserAgent)
 	}
 	if l.Ip != "" {
 		eventLog.Str(`ip`, l.Ip)
@@ -121,6 +128,15 @@ func (l LogEvent) SendResponse(logger zerolog.Logger) {
 	}
 	if l.RequestId != "" {
 		eventLog.Str(`requestId`, l.RequestId)
+	}
+	if l.UserId != "" {
+		eventLog.Str(`userId`, l.UserId)
+	}
+	if l.UserAgent != "" {
+		eventLog.Str(`userAgent`, l.UserAgent)
+	}
+	if l.Ip != "" {
+		eventLog.Str(`ip`, l.Ip)
 	}
 	if l.Host != "" {
 		eventLog.Str(`host`, l.Host)

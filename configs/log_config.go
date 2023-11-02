@@ -10,11 +10,25 @@ import (
 
 var Loggers zerolog.Logger
 
-func NewLogger(path ...string) {
-	if len(path) == 0 {
-		path = append(path, "logger.out")
+func NewLogger(path, fileName string) {
+	pathSplit := strings.Split(path, `.`)
+
+	if len(pathSplit) > 1 {
+		path = pathSplit[0]
 	}
-	logFile, err := os.OpenFile(path[0], os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0664)
+
+	if !strings.HasSuffix(path, `/`) {
+		path = fmt.Sprintf(`%s/`, path)
+	}
+
+	if _, err := os.Stat(path); err != nil {
+		if err = os.MkdirAll(path, 0664); err != nil {
+			panic(err)
+		}
+	}
+
+	path = fmt.Sprintf(`%s%s.out`, path, fileName)
+	logFile, err := os.OpenFile(path, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0664)
 	if err != nil {
 		panic(err)
 	}
@@ -25,16 +39,24 @@ func NewLogger(path ...string) {
 	)).With().Timestamp().Logger()
 }
 
-func NewLoggerReqRes(name string, date time.Time, multiOutput bool, path ...string) zerolog.Logger {
-	if len(path) == 0 {
-		path = append(path, "logger.out")
-	}
-	pathSplit := strings.Split(path[0], `.`)
-	pathName := fmt.Sprintf(`%s_%s_%s`, pathSplit[0], date.Format(`2006-01-02`), name)
+func NewLoggerReqRes(name string, date time.Time, multiOutput bool, path, fileName string) zerolog.Logger {
+	pathSplit := strings.Split(path, `.`)
 	if len(pathSplit) > 1 {
-		pathName = fmt.Sprintf(`%s.%s`, pathName, pathSplit[1])
+		path = pathSplit[0]
 	}
-	logFile, err := os.OpenFile(pathName, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0664)
+
+	if !strings.HasSuffix(path, `/`) {
+		path = fmt.Sprintf(`%s/`, path)
+	}
+
+	if _, err := os.Stat(path); err != nil {
+		if err = os.MkdirAll(path, 0664); err != nil {
+			fmt.Println(err.Error())
+		}
+	}
+
+	path = fmt.Sprintf(`%s%s_%s_%s.out`, path, fileName, date.Format(time.DateOnly), name)
+	logFile, err := os.OpenFile(path, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0664)
 	if err != nil {
 		fmt.Println(err.Error())
 	}
@@ -53,6 +75,8 @@ const (
 	Debug modeLog = "DEBUG"
 	Info  modeLog = "INFO"
 	Trace modeLog = "TRACE"
+	Error modeLog = "ERROR"
+	Warn  modeLog = "WARNING"
 )
 
 type LogEvent struct {
@@ -83,6 +107,10 @@ func (l LogEvent) SendRequest(logger zerolog.Logger) {
 			eventLog = logger.Debug()
 		case Trace:
 			eventLog = logger.Trace()
+		case Error:
+			eventLog = logger.Error()
+		case Warn:
+			eventLog = logger.Warn()
 		default:
 			eventLog = logger.Info()
 		}
@@ -136,6 +164,10 @@ func (l LogEvent) SendResponse(logger zerolog.Logger) {
 			eventLog = logger.Debug()
 		case Trace:
 			eventLog = logger.Trace()
+		case Error:
+			eventLog = logger.Error()
+		case Warn:
+			eventLog = logger.Warn()
 		default:
 			eventLog = logger.Info()
 		}

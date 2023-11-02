@@ -115,7 +115,7 @@ func (l LogEvent) SendResponse(logger zerolog.Logger) {
 	if l.Error != nil {
 		eventLog = logger.Err(l.Error)
 	} else {
-		eventLog = logger.Info()
+		eventLog = logger.Debug()
 	}
 	if string(l.BodyResponse) != "" {
 		eventLog.RawJSON(`resBody`, l.BodyResponse)

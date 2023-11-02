@@ -13,7 +13,6 @@ type config struct {
 	Swagger    swagger    `yaml:"swagger"`
 	Log        log        `yaml:"log"`
 	Datasource datasource `yaml:"datasource"`
-	Core       core       `yaml:"core"`
 }
 
 type app struct {
@@ -49,8 +48,22 @@ type log struct {
 }
 
 type datasource struct {
+	Api   api   `yaml:"api"`
 	DB    db    `yaml:"db"`
 	Redis redis `yaml:"redis"`
+}
+
+type api struct {
+	Debug              bool       `yaml:"debug"`
+	CoreBankingService serviceApi `yaml:"coreBankingService"`
+}
+
+type serviceApi struct {
+	Name      string `yaml:"name"`
+	Host      string `yaml:"host"`
+	Username  string `yaml:"username"`
+	ChannelId string `yaml:"channelId"`
+	SecretKey string `yaml:"secretKey"`
 }
 
 type db struct {
@@ -81,15 +94,6 @@ type redis struct {
 	PoolSize    int           `yaml:"poolSize"`
 	PoolTimeout time.Duration `yaml:"poolTimeout"`
 	Ping        bool          `yaml:"ping"`
-}
-
-type core struct {
-	Host      string `yaml:"host"`
-	Username  string `yaml:"username"`
-	ChannelId string `yaml:"channelId"`
-	SecretKey string `yaml:"secretKey"`
-	IsForward bool   `yaml:"isForward"`
-	LogDebug  bool   `yaml:"logDebug"`
 }
 
 var APPL_MAP = map[string]string{

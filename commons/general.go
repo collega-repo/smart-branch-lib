@@ -64,6 +64,7 @@ type serviceApi struct {
 	Username  string `yaml:"username"`
 	ChannelId string `yaml:"channelId"`
 	SecretKey string `yaml:"secretKey"`
+	IsForward bool   `yaml:"isForward"`
 }
 
 type db struct {

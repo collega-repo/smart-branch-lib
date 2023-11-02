@@ -47,6 +47,14 @@ func NewLoggerReqRes(name string, date time.Time, multiOutput bool, path ...stri
 	return zerolog.New(logFile).With().Timestamp().Logger()
 }
 
+type modeLog string
+
+const (
+	Debug modeLog = "DEBUG"
+	Info  modeLog = "INFO"
+	Trace modeLog = "TRACE"
+)
+
 type LogEvent struct {
 	IdempotencyKey string
 	RequestId      string
@@ -62,6 +70,7 @@ type LogEvent struct {
 	Path           string
 	Method         string
 	Protocol       string
+	Mode           modeLog
 }
 
 func (l LogEvent) SendRequest(logger zerolog.Logger) {
@@ -69,7 +78,14 @@ func (l LogEvent) SendRequest(logger zerolog.Logger) {
 	if l.Error != nil {
 		eventLog = logger.Err(l.Error)
 	} else {
-		eventLog = logger.Debug()
+		switch l.Mode {
+		case Debug:
+			eventLog = logger.Debug()
+		case Trace:
+			eventLog = logger.Trace()
+		default:
+			eventLog = logger.Info()
+		}
 	}
 	if string(l.BodyRequest) != "" {
 		eventLog.RawJSON("reqBody", l.BodyRequest)
@@ -115,7 +131,14 @@ func (l LogEvent) SendResponse(logger zerolog.Logger) {
 	if l.Error != nil {
 		eventLog = logger.Err(l.Error)
 	} else {
-		eventLog = logger.Debug()
+		switch l.Mode {
+		case Debug:
+			eventLog = logger.Debug()
+		case Trace:
+			eventLog = logger.Trace()
+		default:
+			eventLog = logger.Info()
+		}
 	}
 	if string(l.BodyResponse) != "" {
 		eventLog.RawJSON(`resBody`, l.BodyResponse)

@@ -74,16 +74,18 @@ var MapStatusRestToGrpc = map[code]codes.Code{
 	CodeNotFoundCore:         codes.NotFound,
 	CodeUnAuthentication:     codes.Unauthenticated,
 	CodeUnAuthenticationCore: codes.Unauthenticated,
+	CodeForbiddenAccess:      codes.PermissionDenied,
 	CodeInternalError:        codes.Internal,
 	CodeFailed:               codes.InvalidArgument,
 }
 
 var MapStatusGrpcToRest = map[codes.Code]code{
-	codes.OK:              CodeSuccess,
-	codes.NotFound:        CodeNotFound,
-	codes.Unauthenticated: CodeUnAuthentication,
-	codes.Internal:        CodeInternalError,
-	codes.InvalidArgument: CodeFailed,
+	codes.OK:               CodeSuccess,
+	codes.NotFound:         CodeNotFound,
+	codes.Unauthenticated:  CodeUnAuthentication,
+	codes.PermissionDenied: CodeForbiddenAccess,
+	codes.Internal:         CodeInternalError,
+	codes.InvalidArgument:  CodeFailed,
 }
 
 type ErrorResponse struct {

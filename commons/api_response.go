@@ -32,6 +32,7 @@ const (
 	CodeSuccessNoData          code      = "04"
 	CodeNotFoundCore           code      = "84"
 	CodeUnAuthenticationCore   code      = "87"
+	CodeInsufficientBalance    code      = "90"
 	CodeHtxNotFound            code      = "91"
 	CodeTrxNotFound            code      = "92"
 	CodeInternalError          code      = "93"
@@ -340,6 +341,8 @@ func ErrorFromGrpc(err error) error {
 				case string(CodeUnAuthenticationCore), string(CodeUnAuthentication):
 					return errs.ErrAuthFailed
 				case string(CodeNotFoundCore), string(CodeNotFound):
+					return errs.ErrRecordNotFound
+				case string(CodeInsufficientBalance):
 					return errs.ErrInsufficientBalance
 				default:
 					return ErrorCallAPi{

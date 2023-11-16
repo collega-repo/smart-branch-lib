@@ -71,8 +71,8 @@ var MapStatusRestToGrpc = map[code]codes.Code{
 	CodeSuccess:              codes.OK,
 	CodeNotFound:             codes.NotFound,
 	CodeNotFoundCore:         codes.NotFound,
-	CodeUnAuthentication:     codes.NotFound,
-	CodeUnAuthenticationCore: codes.NotFound,
+	CodeUnAuthentication:     codes.Unauthenticated,
+	CodeUnAuthenticationCore: codes.Unauthenticated,
 	CodeInternalError:        codes.Internal,
 	CodeFailed:               codes.InvalidArgument,
 }
@@ -256,6 +256,23 @@ func FailedFromAnotherResponse[T any, E any](response ApiResponse[E]) ApiRespons
 		Status:  response.Status,
 		Message: response.Message,
 		Error:   response.Error,
+	}
+}
+
+func FailedErrResponse[T any](code code, message string) ApiResponse[T] {
+	return ApiResponse[T]{
+		Code:    code,
+		Status:  FailedResponse,
+		Message: message,
+	}
+}
+
+func SuccessResponseApi[T any](code code, message string, data T) ApiResponse[T] {
+	return ApiResponse[T]{
+		Code:    code,
+		Status:  SuccessResponse,
+		Message: message,
+		Data:    data,
 	}
 }
 

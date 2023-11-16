@@ -77,6 +77,14 @@ var MapStatusRestToGrpc = map[code]codes.Code{
 	CodeFailed:               codes.InvalidArgument,
 }
 
+var MapStatusGrpcToRest = map[codes.Code]code{
+	codes.OK:              CodeSuccess,
+	codes.NotFound:        CodeNotFound,
+	codes.Unauthenticated: CodeUnAuthentication,
+	codes.Internal:        CodeInternalError,
+	codes.InvalidArgument: CodeFailed,
+}
+
 type ErrorResponse struct {
 	Error            errorCode `json:"error"`
 	ErrorDescription string    `json:"error_description,omitempty"`
@@ -324,15 +332,23 @@ func ErrResponseFromGrpc(err error) *ErrResponse {
 }
 
 func ErrorFromGrpc(err error) error {
-	errorResponse := ErrResponseFromGrpc(err)
-	if errorResponse != nil {
-		switch errorResponse.Code {
-		case string(CodeUnAuthenticationCore), string(CodeUnAuthentication):
-			return errs.ErrAuthFailed
-		case string(CodeNotFoundCore), string(CodeNotFound):
-			return errs.ErrRecordNotFound
-		default:
-			return fmt.Errorf(errorResponse.Message)
+	statusResponse := status2.Convert(err)
+	if len(statusResponse.Details()) > 0 {
+		if errorResponse, ok := statusResponse.Details()[0].(*ErrResponse); ok {
+			if errorResponse != nil {
+				switch errorResponse.Code {
+				case string(CodeUnAuthenticationCore), string(CodeUnAuthentication):
+					return errs.ErrAuthFailed
+				case string(CodeNotFoundCore), string(CodeNotFound):
+					return errs.ErrInsufficientBalance
+				default:
+					return ErrorCallAPi{
+						StatusCode: MapStatusCode[MapStatusGrpcToRest[statusResponse.Code()]],
+						ErrorCode:  errorResponse.Code,
+						Errors:     fmt.Errorf(errorResponse.Message),
+					}
+				}
+			}
 		}
 	}
 	return err

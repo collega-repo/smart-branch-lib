@@ -364,7 +364,7 @@ func ResponseErrorGrpc[T any](response ApiResponse[T]) error {
 	var err error
 	statusRes := status2.New(MapStatusRestToGrpc[response.Code], response.Message)
 	if response.Error != nil {
-		var errMap errs.ErrMap
+		var errMap errs.ErrMapStr
 		if errors.As(response.Error, &errMap) {
 			errResponse.Detail = errMap
 		}

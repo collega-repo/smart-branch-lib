@@ -77,6 +77,7 @@ var MapStatusRestToGrpc = map[code]codes.Code{
 	CodeUnAuthenticationCore: codes.Unauthenticated,
 	CodeForbiddenAccess:      codes.PermissionDenied,
 	CodeInternalError:        codes.Internal,
+	CodeInvalidRequest:       codes.InvalidArgument,
 	CodeFailed:               codes.InvalidArgument,
 }
 

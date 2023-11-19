@@ -231,11 +231,7 @@ func FailedResponseCallAPI[T any](err error) (ApiResponse[T], bool) {
 	if ok {
 		switch {
 		case errRes.StatusCode == http.StatusUnauthorized, errRes.StatusCode >= http.StatusInternalServerError:
-			return ApiResponse[T]{
-				Code:    CodeInternalError,
-				Status:  FailedResponse,
-				Message: fmt.Sprintf(`invalid call api: %s`, err.Error()),
-			}, true
+			return InternalServerErrorApiResponse[T](err), true
 		case errRes.StatusCode == http.StatusNotFound:
 			return NotFoundApiResponse[T](err.Error(), nil), true
 		default:

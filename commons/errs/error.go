@@ -28,10 +28,3 @@ func (e ErrMap) Error() string {
 	jsonByte, _ := json.Marshal(e)
 	return string(jsonByte)
 }
-
-type ErrMapStr map[string]string
-
-func (e ErrMapStr) Error() string {
-	jsonByte, _ := json.Marshal(e)
-	return string(jsonByte)
-}

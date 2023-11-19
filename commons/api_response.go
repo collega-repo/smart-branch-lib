@@ -8,6 +8,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"google.golang.org/grpc/codes"
 	status2 "google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/structpb"
 	"net/http"
 )
 
@@ -364,9 +365,13 @@ func ResponseErrorGrpc[T any](response ApiResponse[T]) error {
 	var err error
 	statusRes := status2.New(MapStatusRestToGrpc[response.Code], response.Message)
 	if response.Error != nil {
-		var errMap errs.ErrMapStr
+		var errMap errs.ErrMap
 		if errors.As(response.Error, &errMap) {
-			errResponse.Detail = errMap
+			if value, err := structpb.NewValue(errMap); err != nil {
+				return err
+			} else {
+				errResponse.Detail = value
+			}
 		}
 	}
 	statusRes, err = statusRes.WithDetails(&errResponse)

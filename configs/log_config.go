@@ -22,13 +22,13 @@ func NewLogger(path, fileName string) {
 	}
 
 	if _, err := os.Stat(path); err != nil {
-		if err = os.MkdirAll(path, 0664); err != nil {
+		if err = os.MkdirAll(path, 0777); err != nil {
 			panic(err)
 		}
 	}
 
 	path = fmt.Sprintf(`%s%s.out`, path, fileName)
-	logFile, err := os.OpenFile(path, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0664)
+	logFile, err := os.OpenFile(path, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0777)
 	if err != nil {
 		panic(err)
 	}
@@ -50,13 +50,13 @@ func NewLoggerReqRes(name string, date time.Time, multiOutput bool, path, fileNa
 	}
 
 	if _, err := os.Stat(path); err != nil {
-		if err = os.MkdirAll(path, 0664); err != nil {
+		if err = os.MkdirAll(path, 0777); err != nil {
 			fmt.Println(err.Error())
 		}
 	}
 
 	path = fmt.Sprintf(`%s%s_%s_%s.out`, path, fileName, date.Format(time.DateOnly), name)
-	logFile, err := os.OpenFile(path, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0664)
+	logFile, err := os.OpenFile(path, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0777)
 	if err != nil {
 		fmt.Println(err.Error())
 	}

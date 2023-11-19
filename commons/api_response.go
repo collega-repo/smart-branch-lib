@@ -367,7 +367,8 @@ func ResponseErrorGrpc[T any](response ApiResponse[T]) error {
 	if response.Error != nil {
 		var errMap errs.ErrMap
 		if errors.As(response.Error, &errMap) {
-			if value, err := structpb.NewValue(errMap); err != nil {
+			mapErr := map[string]interface{}(errMap)
+			if value, err := structpb.NewValue(mapErr); err != nil {
 				return err
 			} else {
 				errResponse.Detail = value

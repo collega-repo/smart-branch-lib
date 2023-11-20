@@ -225,8 +225,6 @@ func FailedResponseCallAPI[T any](err error) (ApiResponse[T], bool) {
 		switch {
 		case errRes.StatusCode == http.StatusUnauthorized, errRes.StatusCode >= http.StatusInternalServerError:
 			return InternalServerErrorApiResponse[T](err), true
-		case errRes.StatusCode == http.StatusNotFound:
-			return NotFoundApiResponse[T](err.Error(), nil), true
 		default:
 			var errMap errs.ErrMap
 			if errors.As(errRes.Errors, &errMap) {

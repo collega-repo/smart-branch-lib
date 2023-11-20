@@ -69,7 +69,7 @@ var MapStatusCode = map[code]int{
 	CodeFailed:                 http.StatusBadRequest,
 }
 
-var MapStatusRestToGrpc = map[code]codes.Code{
+var MapStatusGrpc = map[code]codes.Code{
 	CodeSuccess:              codes.OK,
 	CodeNotFound:             codes.NotFound,
 	CodeNotFoundCore:         codes.NotFound,
@@ -79,15 +79,6 @@ var MapStatusRestToGrpc = map[code]codes.Code{
 	CodeInternalError:        codes.Internal,
 	CodeInvalidRequest:       codes.InvalidArgument,
 	CodeFailed:               codes.InvalidArgument,
-}
-
-var MapStatusGrpcToRest = map[codes.Code]code{
-	codes.OK:               CodeSuccess,
-	codes.NotFound:         CodeNotFound,
-	codes.Unauthenticated:  CodeUnAuthentication,
-	codes.PermissionDenied: CodeForbiddenAccess,
-	codes.Internal:         CodeInternalError,
-	codes.InvalidArgument:  CodeFailed,
 }
 
 type ErrorResponse struct {
@@ -237,7 +228,11 @@ func FailedResponseCallAPI[T any](err error) (ApiResponse[T], bool) {
 		case errRes.StatusCode == http.StatusNotFound:
 			return NotFoundApiResponse[T](err.Error(), nil), true
 		default:
-			return FailedApiResponse[T](err.Error(), nil), true
+			var errMap errs.ErrMap
+			if errors.As(errRes.Errors, &errMap) {
+				return FailedErrResponse[T](code(errRes.ErrorCode), errRes.Errors.Error(), errRes.Errors), true
+			}
+			return FailedErrResponse[T](code(errRes.ErrorCode), errRes.Errors.Error()), true
 		}
 	}
 	return ApiResponse[T]{}, false
@@ -268,12 +263,16 @@ func FailedFromAnotherResponse[T any, E any](response ApiResponse[E]) ApiRespons
 	}
 }
 
-func FailedErrResponse[T any](code code, message string) ApiResponse[T] {
-	return ApiResponse[T]{
+func FailedErrResponse[T any](code code, message string, errs ...error) ApiResponse[T] {
+	response := ApiResponse[T]{
 		Code:    code,
 		Status:  FailedResponse,
 		Message: message,
 	}
+	if len(errs) > 0 {
+		response.Error = errs[0]
+	}
+	return response
 }
 
 func SuccessResponseApi[T any](code code, message string, data T) ApiResponse[T] {
@@ -322,35 +321,22 @@ func Response[T any](c *fiber.Ctx, response ApiResponse[T]) (err error) {
 	return
 }
 
-func ErrResponseFromGrpc(err error) *ErrResponse {
-	statusResponse := status2.Convert(err)
-	if len(statusResponse.Details()) > 0 {
-		if errorResponse, ok := statusResponse.Details()[0].(*ErrResponse); ok {
-			return errorResponse
-		}
-	}
-	return nil
-}
-
 func ErrorFromGrpc(err error) error {
 	statusResponse := status2.Convert(err)
 	if len(statusResponse.Details()) > 0 {
 		if errorResponse, ok := statusResponse.Details()[0].(*ErrResponse); ok {
 			if errorResponse != nil {
-				switch errorResponse.Code {
-				case string(CodeUnAuthenticationCore), string(CodeUnAuthentication):
-					return errs.ErrAuthFailed
-				case string(CodeNotFoundCore), string(CodeNotFound):
-					return errs.ErrRecordNotFound
-				case string(CodeInsufficientBalance):
-					return errs.ErrInsufficientBalance
-				default:
-					return ErrorCallAPi{
-						StatusCode: MapStatusCode[MapStatusGrpcToRest[statusResponse.Code()]],
-						ErrorCode:  errorResponse.Code,
-						Errors:     fmt.Errorf(errorResponse.Message),
-					}
+				errorCallAPi := ErrorCallAPi{
+					StatusCode: MapStatusCode[code(errorResponse.Code)],
+					ErrorCode:  errorResponse.Code,
 				}
+				if errorResponse.Detail != nil {
+					errMap := errs.ErrMap(errorResponse.Detail.AsInterface().(map[string]any))
+					errorCallAPi.Errors = errMap
+				} else {
+					errorCallAPi.Errors = fmt.Errorf(errorResponse.Message)
+				}
+				return errorCallAPi
 			}
 		}
 	}
@@ -364,7 +350,7 @@ func ResponseErrorGrpc[T any](response ApiResponse[T]) error {
 	}
 
 	var err error
-	statusRes := status2.New(MapStatusRestToGrpc[response.Code], response.Message)
+	statusRes := status2.New(MapStatusGrpc[response.Code], response.Message)
 	if response.Error != nil {
 		var errMap errs.ErrMap
 		if errors.As(response.Error, &errMap) {

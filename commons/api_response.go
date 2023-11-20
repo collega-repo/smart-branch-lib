@@ -319,6 +319,16 @@ func Response[T any](c *fiber.Ctx, response ApiResponse[T]) (err error) {
 	return
 }
 
+func ErrResponseFromGrpc(err error) *ErrResponse {
+	statusResponse := status2.Convert(err)
+	if len(statusResponse.Details()) > 0 {
+		if errorResponse, ok := statusResponse.Details()[0].(*ErrResponse); ok {
+			return errorResponse
+		}
+	}
+	return nil
+}
+
 func ErrorFromGrpc(err error) error {
 	statusResponse := status2.Convert(err)
 	if len(statusResponse.Details()) > 0 {

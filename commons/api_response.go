@@ -21,28 +21,28 @@ const (
 )
 
 type (
-	code      string
+	Code      string
 	errorCode string
 )
 
 const (
-	CodeSuccess                code      = "00"
-	CodeSuccessCBS             code      = "01"
-	CodeSuccessPending         code      = "02"
-	CodeSuccessPendingApproval code      = "03"
-	CodeSuccessNoData          code      = "04"
-	CodeNotFoundCore           code      = "84"
-	CodeUnAuthenticationCore   code      = "87"
-	CodeInsufficientBalance    code      = "90"
-	CodeHtxNotFound            code      = "91"
-	CodeTrxNotFound            code      = "92"
-	CodeInternalError          code      = "93"
-	CodeNotFound               code      = "94"
-	CodeIdempotencyFailed      code      = "95"
-	CodeForbiddenAccess        code      = "96"
-	CodeUnAuthentication       code      = "97"
-	CodeInvalidRequest         code      = "98"
-	CodeFailed                 code      = "99"
+	CodeSuccess                Code      = "00"
+	CodeSuccessCBS             Code      = "01"
+	CodeSuccessPending         Code      = "02"
+	CodeSuccessPendingApproval Code      = "03"
+	CodeSuccessNoData          Code      = "04"
+	CodeNotFoundCore           Code      = "84"
+	CodeUnAuthenticationCore   Code      = "87"
+	CodeInsufficientBalance    Code      = "90"
+	CodeHtxNotFound            Code      = "91"
+	CodeTrxNotFound            Code      = "92"
+	CodeInternalError          Code      = "93"
+	CodeNotFound               Code      = "94"
+	CodeIdempotencyFailed      Code      = "95"
+	CodeForbiddenAccess        Code      = "96"
+	CodeUnAuthentication       Code      = "97"
+	CodeInvalidRequest         Code      = "98"
+	CodeFailed                 Code      = "99"
 	InvalidToken               errorCode = "invalid_token"
 	InvalidRequest             errorCode = "invalid_request"
 	InvalidClient              errorCode = "invalid_client"
@@ -54,7 +54,7 @@ const (
 	AccessDenied               errorCode = "access_denied"
 )
 
-var MapStatusCode = map[code]int{
+var MapStatusCode = map[Code]int{
 	CodeSuccess:                http.StatusOK,
 	CodeSuccessCBS:             http.StatusInternalServerError,
 	CodeSuccessPending:         http.StatusAccepted,
@@ -66,10 +66,11 @@ var MapStatusCode = map[code]int{
 	CodeForbiddenAccess:        http.StatusForbidden,
 	CodeUnAuthentication:       http.StatusUnauthorized,
 	CodeInvalidRequest:         http.StatusUnprocessableEntity,
+	CodeInsufficientBalance:    http.StatusBadRequest,
 	CodeFailed:                 http.StatusBadRequest,
 }
 
-var MapStatusGrpc = map[code]codes.Code{
+var MapStatusGrpc = map[Code]codes.Code{
 	CodeSuccess:              codes.OK,
 	CodeNotFound:             codes.NotFound,
 	CodeNotFoundCore:         codes.NotFound,
@@ -78,6 +79,7 @@ var MapStatusGrpc = map[code]codes.Code{
 	CodeForbiddenAccess:      codes.PermissionDenied,
 	CodeInternalError:        codes.Internal,
 	CodeInvalidRequest:       codes.InvalidArgument,
+	CodeInsufficientBalance:  codes.InvalidArgument,
 	CodeFailed:               codes.InvalidArgument,
 }
 
@@ -99,7 +101,7 @@ func (e ErrorCallAPi) Error() string {
 }
 
 type ApiResponse[T any] struct {
-	Code    code   `json:"code"`
+	Code    Code   `json:"Code"`
 	Status  status `json:"status"`
 	Message string `json:"message"`
 	Data    T      `json:"data,omitempty"`
@@ -228,9 +230,9 @@ func FailedResponseCallAPI[T any](err error) (ApiResponse[T], bool) {
 		default:
 			var errMap errs.ErrMap
 			if errors.As(errRes.Errors, &errMap) {
-				return FailedErrResponse[T](code(errRes.ErrorCode), errRes.Errors.Error(), errRes.Errors), true
+				return FailedErrResponse[T](Code(errRes.ErrorCode), errRes.Errors.Error(), errRes.Errors), true
 			}
-			return FailedErrResponse[T](code(errRes.ErrorCode), errRes.Errors.Error()), true
+			return FailedErrResponse[T](Code(errRes.ErrorCode), errRes.Errors.Error()), true
 		}
 	}
 	return ApiResponse[T]{}, false
@@ -261,7 +263,7 @@ func FailedFromAnotherResponse[T any, E any](response ApiResponse[E]) ApiRespons
 	}
 }
 
-func FailedErrResponse[T any](code code, message string, errs ...error) ApiResponse[T] {
+func FailedErrResponse[T any](code Code, message string, errs ...error) ApiResponse[T] {
 	response := ApiResponse[T]{
 		Code:    code,
 		Status:  FailedResponse,
@@ -273,7 +275,7 @@ func FailedErrResponse[T any](code code, message string, errs ...error) ApiRespo
 	return response
 }
 
-func SuccessResponseApi[T any](code code, message string, data T) ApiResponse[T] {
+func SuccessResponseApi[T any](code Code, message string, data T) ApiResponse[T] {
 	return ApiResponse[T]{
 		Code:    code,
 		Status:  SuccessResponse,
@@ -335,7 +337,7 @@ func ErrorFromGrpc(err error) error {
 		if errorResponse, ok := statusResponse.Details()[0].(*ErrResponse); ok {
 			if errorResponse != nil {
 				errorCallAPi := ErrorCallAPi{
-					StatusCode: MapStatusCode[code(errorResponse.Code)],
+					StatusCode: MapStatusCode[Code(errorResponse.Code)],
 					ErrorCode:  errorResponse.Code,
 				}
 				if errorResponse.Detail != nil {
@@ -358,7 +360,11 @@ func ResponseErrorGrpc[T any](response ApiResponse[T]) error {
 	}
 
 	var err error
-	statusRes := status2.New(MapStatusGrpc[response.Code], response.Message)
+	codeGrpc := MapStatusGrpc[response.Code]
+	if codeGrpc == 0 {
+		codeGrpc = 3
+	}
+	statusRes := status2.New(codeGrpc, response.Message)
 	if response.Error != nil {
 		var errMap errs.ErrMap
 		if errors.As(response.Error, &errMap) {

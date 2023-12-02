@@ -56,6 +56,7 @@ type datasource struct {
 type api struct {
 	Debug              bool       `yaml:"debug"`
 	CoreBankingService serviceApi `yaml:"coreBankingService"`
+	ExtService         serviceApi `yaml:"extService"`
 }
 
 type serviceApi struct {

@@ -2,7 +2,6 @@ package info
 
 import (
 	"context"
-	"github.com/collega-repo/smart-branch-lib/models/dto"
 	"time"
 )
 
@@ -18,7 +17,6 @@ type RequestInfo struct {
 	ReqTime        time.Time
 	IdempotencyKey string
 	RequestId      string
-	CfgSys         dto.CfgSys
 }
 
 type requestInfo struct{}

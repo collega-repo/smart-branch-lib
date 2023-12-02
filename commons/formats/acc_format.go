@@ -1,6 +1,9 @@
 package formats
 
-import "fmt"
+import (
+	"fmt"
+	"github.com/shopspring/decimal"
+)
 
 func AccFormat(formatPattern string, account string) string {
 	for i, char := range formatPattern {
@@ -10,4 +13,9 @@ func AccFormat(formatPattern string, account string) string {
 		}
 	}
 	return account
+}
+
+func StringToDecimal(value string) decimal.Decimal {
+	valueDecimal, _ := decimal.NewFromString(value)
+	return valueDecimal
 }

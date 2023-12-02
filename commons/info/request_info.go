@@ -2,13 +2,16 @@ package info
 
 import (
 	"context"
-	"github.com/collega-repo/smart-branch-lib/dto"
+	"github.com/collega-repo/smart-branch-lib/models/dto"
 	"time"
 )
 
 type RequestInfo struct {
 	UserAgent      string
 	UserId         string
+	BranchId       string
+	DeviceId       string
+	Role           string
 	IpAddr         string
 	Method         string
 	Path           string
